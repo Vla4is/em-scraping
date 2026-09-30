@@ -1,0 +1,6 @@
+first task
+1. TOS prohibit bot usage (1.Use of the Site.p3), we discussed it in the interview, its not respected - anti competetive behaviour legal grey area.
+2. Its a shopify site making it simplier, loaded the site and saw widget_settings (https://static.rechargecdn.com/store/glossier-admin.myshopify.com/2020-12/widget_settings.json) and store settings (https://static.rechargecdn.com/store/glossier-admin.myshopify.com/2020-12/store_settings.json) indicated its shopify
+also, noted that all the products should live in https://www.glossier.com/collections/all/products.json but i will disredard it for the first step
+and essentially scrape in sake of training.
+3. after just running curl the site returned all the products, server rendered website so no selenium.
