@@ -47,7 +47,8 @@ DECISIONS AND TRADEOFFS
   Tradeoff: switching countries is a manual step.
 
 KNOWN LIMITATIONS
-- US price format is mixed: $116.00 (variant picker) vs $116 (button).
+- US price format is mixed: $116.00 (variant picker) vs $116 (button). Thats not very good for analysts but the ETL should eat it like nuts
+if designed well. But we can fix it in staging layer. Or modify script further.
 - Empty descriptions: Ultralip Duo (no description element), Digital Gift Card (US only).
 - 4 empty images: the build-your-own sets (see above). Images are one photo per product, not per shade/variant.
 - Category is Shopify's product type: internal names (Merch = "Glossier Goods"), sets take their contents' type.

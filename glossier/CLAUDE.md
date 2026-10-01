@@ -1,0 +1,25 @@
+# Glossier scraper
+
+- Target: https://www.glossier.com/collections/all. Lithuanian locale (`/en-lt/`) first, then the US (plain URL), because the task requires a re-run on the US locale. The output is CSV. They explicitly said to **KEEP IT SIMPLE**: no complex data engineering, the focus is on scraping. The repo also needs `requirements.txt` and `notes.txt`.
+- Shopify, **server-rendered**, scraped with Scrapy. We **don't use `/products.json`**; the user scrapes the HTML for practice.
+- Locale: switch `start_urls` by commenting one line. The plain URL is US only because the spiders don't send `Accept-Language`; with that header the site redirects by IP.
+- One folder per task under `glossier/` (`taskN/glossier_spider.py`, `taskN/output/`). `glossier/raw/` holds saved pages for inspection.
+- Task 1: first page of cards only. Task 2: unique products + category. Task 3: + description. Task 4: one row per variant.
+- Selectors:
+  - Collection page:
+    - card: `article.js-product-item` (`data-product-id`)
+    - title / link: `.pi__title a`
+    - next page: `[rel="next"]`
+    - price (Task 1): `.pi__price:not(.hide)` → `.pi__price--current`, `.pi__price--compare-at s`
+    - images (Task 1): `img.js-product-item-image`, `img.js-product-item-image-hover` (`src` or `data-src`)
+  - Product page:
+    - product data: `<script>` containing `SDG.Data.productJson` → `id`, `title`, `type` (category), `variants[]` (`id`, `public_title`, `available`)
+    - description: `#description-item`
+    - variant price: `input.config__radio[data-variant-id][data-variant-price]` (+ `data-variant-compare-at-price`)
+    - button price (no picker, fixed sets): `.js-price-original`, `.js-price-compare`
+    - this product is a set: `[data-set-items-json][data-set-product-id="<product id>"]` (the ID check matters: other products' pages advertise sets)
+    - build-your-own set: also `[data-flexible-discount-percent]`
+- Task 4 writes sets as rows (the skip is commented out). Build-your-own sets have no price; they get `is_flexible_set` and `flexible_discount_percent`. Fixed sets use their page price.
+- Planned: a sets spider whose `set_items` lists, per slot, the variant IDs you can pick, joining on `variant_id`.
+- On Windows, `bash` resolves to the WSL stub and fails. Use `"C:\Program Files\Git\bin\bash.exe"`.
+- I assume the loaded data will be either upserted or fully reloaded downstream.
