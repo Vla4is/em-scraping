@@ -53,3 +53,6 @@ I didnt observe any set that the price is different from what is stated on the m
 44. So i have created a detector for the flexible sets , there are not very common there are only 4. and the reading confrimed that it reads the percentage correctly. These are only 4 outliers the rest is working fine, now I am figuring out from where i need to retrieve the product values, observing and using claude.
 45. Upon inspection i saw that some of the items are marked as flexible set even if they arent, so i will find another selector i believe the issue is in response.css("[data-set-items-json]")
 46. Fixed the selector, found more concrete one. Claude fixed the code. And updated its claude md
+47. I am checking all the sets for structure, takes time. I pulled all the sets and asked claude to look if he will find something strong, otherwise i will be looking for it.
+48. Claude gave an idea "to use 3 differnet selectors for products -> i dont like the idea, i found and then i pushed giving him strong clue -> there was data-variant-id value inside multiple html tags , so almost for sure i would be able to get a clear hierarchy out of ALL the sets with one slector and it was found by claude after
+i provided the clue -> .pv-set-configurable .product-set__list > li

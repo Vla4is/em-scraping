@@ -21,8 +21,10 @@ import scrapy
 
 class GlossierSpider(scrapy.Spider):
     name = "glossier"
-    start_urls = ["https://www.glossier.com/en-lt/collections/all"]
-    # start_urls = ["https://www.glossier.com/collections/all"]
+    # start_urls = ["https://www.glossier.com/en-lt/collections/all"]
+    start_urls = ["https://www.glossier.com/collections/all"]
+    #for scraping the set links
+    # start_urls = ["https://www.glossier.com/en-lt/collections/sets"]
     custom_settings = {
         "ROBOTSTXT_OBEY": True,
         "DOWNLOAD_DELAY": 1,
