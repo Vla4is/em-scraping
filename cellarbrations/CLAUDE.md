@@ -1,0 +1,23 @@
+# Cellarbrations scraper
+
+- Target: https://www.cellarbrations.com.au/sm/delivery/rsid/144981/categories/spirits/whisky-id-Whisky_Food (store `rsid` 144981). Euromonitor stretch exercise. The output is CSV. Keep it practical and simple. The repo also needs `requirements.txt` and `notes.txt` (assumptions, decisions, tradeoffs, tools, and **AI usage**: what AI did, what was written or edited by hand, and why).
+- Tasks:
+  - Task 1: first page only → `product_name`, `product_id`, `url`, `image`, `price`, `scraped_at`.
+  - Task 2: all products in the category.
+  - Task 3: + description from the product pages.
+  - Task 4: + `measuring_unit` and `units` (`700 Ml` → `Ml`, `700`).
+  - Task 5 (Data Engineer only): does the site need browser rendering, or can direct HTTP requests get the data? Implement the **least resource-intensive reliable** approach. `notes.txt` gives the evidence, the tradeoffs (requests, browser instances, asset loading) and what would make us switch. Open question: is the user a Data Engineer candidate?
+- Output types: all strings except `image`, which is an array of strings. Columns: `product_name`, `product_id`, `image`, `url`, `price`, `scraped_at`, `measuring_units`, `units`. The spec says both `measuring_unit` and `measuring_units`; check which one to use.
+- Access:
+  - Cloudflare blocks the user's own IP ("Sorry, you have been blocked", 403) on both `www.` and the API host, with or without browser headers.
+  - The site loads **only over a VPN**. Document this in `notes.txt`, since reviewers may not be able to reproduce it.
+  - Not yet tested: whether plain HTTP works over the VPN, or whether the TLS fingerprint is also checked (in that case use `curl_cffi` with `impersonate="chrome"`).
+  - `robots.txt`: `Allow: /`. Keep the request rate low.
+- Site:
+  - A JavaScript storefront (Mi9 platform). Data comes from a JSON API, `https://storefrontgateway.cellarbrations.com.au/api/stores/144981/...`.
+  - The browser sends the headers `x-shopping-mode: 22222222-2222-2222-2222-222222222222`, `x-site-host: https://www.cellarbrations.com.au` and `x-customer-session-id: https://www.cellarbrations.com.au|<uuid>`.
+  - The category product-list and product-detail endpoints are **still to be found**.
+  - Product images: `cdn.metcash.media/image/upload/.../alm-online/images/<id>.jpg`.
+- Approach preference: plain HTTP to the JSON API (Scrapy, as in the Glossier project), then `curl_cffi` or `scrapy-impersonate`, then Playwright (blocking assets, reading the API responses). Playwright is used now only for discovery (`test-pw.py`, run from the repo root; it saves `raw/pw-*`).
+- Layout: one folder per task, as in `glossier/` (`cellarbrations/taskN/`, `taskN/output/`). `cellarbrations/raw/` holds saved pages and responses for inspection.
+- Windows: run from `C:\dev\scraping` with the repo `.venv` (Python 3.12). For bash, use `"C:\Program Files\Git\bin\bash.exe"`.

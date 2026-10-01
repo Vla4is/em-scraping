@@ -1,2 +1,4 @@
 scrapy==2.19.0
 ipykernel==7.4.0
+chromium
+playwright
