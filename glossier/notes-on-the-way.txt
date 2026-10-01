@@ -55,4 +55,12 @@ I didnt observe any set that the price is different from what is stated on the m
 46. Fixed the selector, found more concrete one. Claude fixed the code. And updated its claude md
 47. I am checking all the sets for structure, takes time. I pulled all the sets and asked claude to look if he will find something strong, otherwise i will be looking for it.
 48. Claude gave an idea "to use 3 differnet selectors for products -> i dont like the idea, i found and then i pushed giving him strong clue -> there was data-variant-id value inside multiple html tags , so almost for sure i would be able to get a clear hierarchy out of ALL the sets with one slector and it was found by claude after
-i provided the clue -> .pv-set-configurable .product-set__list > li
+i provided the clue  and claude spoted it quickly -> .pv-set-configurable .product-set__list > li
+49. Omg, it worked. I asked claude to profile it, i did ad hoc testing on couple of real data units and all the product variants are PERFECTLY matching.
+50. I did ad-hoc testing looking at the in stock variable all looks great and it is likely catching every one of them.
+51. i created an sh file so it will be easier to re-run the spider through bash.
+52. There is an issue with Milky Jelly Cleanser variants 300 mL and 15 ml and After Baume 125 ml are out of stock, my selector scraped it, upon checking they are just no longer produced by glossair, i do not reiterate and change selector for that.
+53. I consder the task as done, and preparing it for submission.
+54. One thing i forgot are the images. I will sort it.
+55. I identified a selector, and instructed claude to add it to the code. (ME selector -> code AI agent)
+56. 4 image outliers as expected, after profiling it,it doesnt matter they are sets and we have the images of all of those products on the partent reocrds.

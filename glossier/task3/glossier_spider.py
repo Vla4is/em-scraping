@@ -10,9 +10,17 @@ The category is not shown on the page; it comes from the product data the page e
 Set the collection URL in start_urls, then run from this folder:
     scrapy runspider glossier_spider.py -O output/name_of_the_output.csv
 """
+import csv
 import json
 from datetime import datetime, timezone
 import scrapy
+from scrapy.exporters import CsvItemExporter
+
+
+class QuotedCsvExporter(CsvItemExporter):
+    # Every CSV value in quotes, so all columns read as text (IDs stay as typed, no 8.94E+12 in Excel).
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, quoting=csv.QUOTE_ALL, **kwargs)
 
 
 class GlossierSpider(scrapy.Spider):
@@ -30,6 +38,7 @@ class GlossierSpider(scrapy.Spider):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
         "FEED_EXPORT_ENCODING": "utf-8",
+        "FEED_EXPORTERS": {"csv": QuotedCsvExporter},
         "FEED_EXPORT_FIELDS": ["product_id", "product_name", "url", "category", "description", "scraped_at"],
     }
 

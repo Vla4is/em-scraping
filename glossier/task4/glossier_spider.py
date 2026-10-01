@@ -2,7 +2,8 @@
 
 Same crawl as Task 3. Each product page lists its variants (sizes, shades, flavours)
 in SDG.Data.productJson -> "variants"; every variant becomes one row, named and linked
-on its own (?variant=<id>) and marked in or out of stock. Sets are skipped for now.
+on its own (?variant=<id>) and marked in or out of stock. A set is one row; set_variant_ids
+lists, per slot, the variant IDs the buyer can pick, each of which has its own row.
 
 Cards on the collection page link to a variant (?variant=...), so one product can
 have several cards (e.g. Cloud Paint Blush / Bronzer). The link is cut at "?" to get
@@ -14,9 +15,17 @@ The category is not shown on the page; it comes from the product data the page e
 Set the collection URL in start_urls, then run from this folder:
     scrapy runspider glossier_spider.py -O output/name_of_the_output.csv
 """
+import csv
 import json
 from datetime import datetime, timezone
 import scrapy
+from scrapy.exporters import CsvItemExporter
+
+
+class QuotedCsvExporter(CsvItemExporter):
+    # Every CSV value in quotes, so all columns read as text (IDs stay as typed, no 8.94E+12 in Excel).
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, quoting=csv.QUOTE_ALL, **kwargs)
 
 
 class GlossierSpider(scrapy.Spider):
@@ -36,7 +45,8 @@ class GlossierSpider(scrapy.Spider):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
         "FEED_EXPORT_ENCODING": "utf-8",
-        "FEED_EXPORT_FIELDS": ["product_id", "variant_id", "product_name", "variant_name", "url", "category", "description", "price", "discounted_price", "is_flexible_set", "flexible_discount_percent", "in_stock", "scraped_at"],
+        "FEED_EXPORTERS": {"csv": QuotedCsvExporter},
+        "FEED_EXPORT_FIELDS": ["product_id", "variant_id", "product_name", "variant_name", "url", "image", "category", "description", "price", "discounted_price", "is_flexible_set", "flexible_discount_percent", "set_variant_ids", "in_stock", "scraped_at"],
     }
 
     def parse(self, response):
@@ -54,11 +64,6 @@ class GlossierSpider(scrapy.Spider):
             yield response.follow(next_page, callback=self.parse)
 
     def parse_product(self, response):
-        # Only set pages carry the set's contents in data-set-items-json; they need their own handling.
-        # if response.css("[data-set-items-json]"):
-        #     self.logger.info("Skipping set: %s", response.url)
-        #     return
-
         product = self.product_json(response)
         if not product.get("type"):
             self.logger.warning("No category found on %s", response.url)
@@ -67,6 +72,8 @@ class GlossierSpider(scrapy.Spider):
         scraped_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
         prices = self.variant_prices(response)
         is_flexible_set, flexible_discount_percent = self.flexible_set(response, product.get("id"))
+        set_variant_ids = self.set_variant_ids(response, product.get("id"))
+        image = self.main_image(response)
         # Products without a variant picker: the "Add to bag" price (the class without -sticky / -product-add-on).
         button_price = (self.money(response.css(".js-price-original ::text").getall()),
                         self.money(response.css(".js-price-compare ::text").getall()))
@@ -81,16 +88,29 @@ class GlossierSpider(scrapy.Spider):
                 # e.g. "XS" or "Black Cherry"; empty (None) for products without options instead of "Default Title".
                 "variant_name": variant.get("public_title") or "",
                 "url": f"{response.url}?variant={variant['id']}",
+                "image": image,
                 "category": product.get("type", ""),
                 "description": description,
                 # When discounted, the site shows the old price struck through next to the current one.
                 "price": old or current,
                 "discounted_price": current if old else "",
-                "is_flexible_set": is_flexible_set,
+                "is_flexible_set": str(is_flexible_set),
                 "flexible_discount_percent": flexible_discount_percent,
-                "in_stock": variant.get("available"),
+                "set_variant_ids": set_variant_ids,
+                "in_stock": str(variant.get("available")),
                 "scraped_at": scraped_at,
             }
+
+    def main_image(self, response):
+        # The product's main gallery photo as a one-item JSON array (the brief's "array of strings").
+        # Build-your-own sets have no gallery in the HTML (JavaScript builds it), so they get "".
+        img = response.css("#gallery.pv-gallery #photos.pv-gallery__items .pv-gallery__main-image "
+                           ".ir.ir--product img.pv-gallery__image")
+        if not img:
+            return ""
+        src = img[0].attrib.get("src") or img[0].attrib.get("data-src", "")
+        # Everything after "?" is imgix resize options, including a "{width}" placeholder.
+        return json.dumps([response.urljoin(src.split("?")[0])])
 
     def flexible_set(self, response, product_id):
         # Build-your-own set -> (True, "15.0"): no fixed price exists, only the discount the site's
@@ -100,6 +120,22 @@ class GlossierSpider(scrapy.Spider):
             return False, ""
         percent = response.css("[data-flexible-discount-percent]::attr(data-flexible-discount-percent)").get()
         return (True, percent) if percent else (False, "")
+
+    def set_variant_ids(self, response, product_id):
+        # Set -> JSON list with one list per slot, e.g. "[[id, id], [id]]"; anything else -> "".
+        # Every slot type (fixed product or build-your-own choice) is an <li> of the set's own list.
+        if not response.css(f'[data-set-items-json][data-set-product-id="{product_id}"]'):
+            return ""
+        slots = []
+        for slot in response.css(".pv-set-configurable .product-set__list > li"):
+            ids = slot.css("input[data-variant-id]::attr(data-variant-id)").getall()
+            if not ids and slot.attrib.get("data-variant-id"):
+                # A component without options (e.g. Crème de You) carries its only variant itself.
+                ids = [slot.attrib["data-variant-id"]]
+            if not ids:
+                self.logger.warning("Empty set slot on %s", response.url)
+            slots.append([int(i) for i in dict.fromkeys(ids)])
+        return json.dumps(slots)
 
     def variant_prices(self, response):
         # Each picker option carries its variant's price. Other products' pickers on the page
