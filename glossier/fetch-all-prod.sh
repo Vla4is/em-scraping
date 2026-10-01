@@ -21,4 +21,7 @@
 
 #  curl https://www.glossier.com/en-lt/products/cloud-paint?variant=46178049523957 -o raw/Cloud-Paint-Blush.html
 #  curl https://www.glossier.com/en-lt/products/cloud-paint?variant=46178049949941 -o raw/Cloud-Paint-Bronzer.html
-curl https://www.glossier.com/en-lt/products/fragrance-duo -o raw/fragrance-duo.html
+# curl https://www.glossier.com/en-lt/products/fragrance-duo -o raw/fragrance-duo.html
+# curl https://www.glossier.com/en-lt/products/glossier-you-routine?variant=46634708041973  -o raw/The-Glossier-You-Routine.html
+
+curl https://www.glossier.com/en-lt/collections/sets -o raw/example-for-claude-from-where-i-grab-the-price-of-the-sets.html

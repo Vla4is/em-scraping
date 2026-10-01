@@ -5,8 +5,21 @@
 - Locale: switch `start_urls` by commenting one line. The plain URL is US only because the spiders don't send `Accept-Language`; with that header the site redirects by IP.
 - One folder per task under `glossier/` (`taskN/glossier_spider.py`, `taskN/output/`). `glossier/raw/` holds saved pages for inspection.
 - Task 1: first page of cards only. Task 2: unique products + category. Task 3: + description. Task 4: one row per variant.
-- Data sources on a product page: `SDG.Data.productJson` (category `type`, `variants` with ID, name, `available`), `#description-item` (description), picker `data-variant-price` / `data-variant-compare-at-price` (per-variant price), `.js-price-original` / `.js-price-compare` (button price for products without a picker and for fixed sets).
-- Sets are recognised by `[data-set-items-json]`. Task 4 skips them for now.
-- Planned for sets: a separate sets spider and CSV. `set_items` holds a list per slot of the variant IDs you can pick (from `data-set-items-json` + the component blocks). Build-your-own sets have no price (it's computed by JavaScript); they get `set_discount_percent` (`data-flexible-discount-percent`) so BI can calculate it. The main Task 4 CSV gets a `variant_id` column to join on. Scrapy's HTTP cache is under consideration.
+- Selectors:
+  - Collection page:
+    - card: `article.js-product-item` (`data-product-id`)
+    - title / link: `.pi__title a`
+    - next page: `[rel="next"]`
+    - price (Task 1): `.pi__price:not(.hide)` → `.pi__price--current`, `.pi__price--compare-at s`
+    - images (Task 1): `img.js-product-item-image`, `img.js-product-item-image-hover` (`src` or `data-src`)
+  - Product page:
+    - product data: `<script>` containing `SDG.Data.productJson` → `id`, `title`, `type` (category), `variants[]` (`id`, `public_title`, `available`)
+    - description: `#description-item`
+    - variant price: `input.config__radio[data-variant-id][data-variant-price]` (+ `data-variant-compare-at-price`)
+    - button price (no picker, fixed sets): `.js-price-original`, `.js-price-compare`
+    - this product is a set: `[data-set-items-json][data-set-product-id="<product id>"]` (the ID check matters: other products' pages advertise sets)
+    - build-your-own set: also `[data-flexible-discount-percent]`
+- Task 4 writes sets as rows (the skip is commented out). Build-your-own sets have no price; they get `is_flexible_set` and `flexible_discount_percent`. Fixed sets use their page price.
+- Planned: a sets spider whose `set_items` lists, per slot, the variant IDs you can pick, joining on `variant_id`.
 - On Windows, `bash` resolves to the WSL stub and fails. Use `"C:\Program Files\Git\bin\bash.exe"`.
 - I assume the loaded data will be either upserted or fully reloaded downstream.

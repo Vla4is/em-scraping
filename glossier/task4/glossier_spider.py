@@ -34,7 +34,7 @@ class GlossierSpider(scrapy.Spider):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
         "FEED_EXPORT_ENCODING": "utf-8",
-        "FEED_EXPORT_FIELDS": ["product_id", "variant_id", "product_name", "variant_name", "url", "category", "description", "price", "discounted_price", "in_stock", "scraped_at"],
+        "FEED_EXPORT_FIELDS": ["product_id", "variant_id", "product_name", "variant_name", "url", "category", "description", "price", "discounted_price", "is_flexible_set", "flexible_discount_percent", "in_stock", "scraped_at"],
     }
 
     def parse(self, response):
@@ -64,6 +64,7 @@ class GlossierSpider(scrapy.Spider):
         description = " ".join(" ".join(response.css("#description-item ::text").getall()).split())
         scraped_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
         prices = self.variant_prices(response)
+        is_flexible_set, flexible_discount_percent = self.flexible_set(response, product.get("id"))
         # Products without a variant picker: the "Add to bag" price (the class without -sticky / -product-add-on).
         button_price = (self.money(response.css(".js-price-original ::text").getall()),
                         self.money(response.css(".js-price-compare ::text").getall()))
@@ -83,9 +84,20 @@ class GlossierSpider(scrapy.Spider):
                 # When discounted, the site shows the old price struck through next to the current one.
                 "price": old or current,
                 "discounted_price": current if old else "",
+                "is_flexible_set": is_flexible_set,
+                "flexible_discount_percent": flexible_discount_percent,
                 "in_stock": variant.get("available"),
                 "scraped_at": scraped_at,
             }
+
+    def flexible_set(self, response, product_id):
+        # Build-your-own set -> (True, "15.0"): no fixed price exists, only the discount the site's
+        # JavaScript applies to the picked items. Fixed sets and products -> (False, "").
+        # The set button must be this product's own: other products' pages can advertise a set.
+        if not response.css(f'[data-set-items-json][data-set-product-id="{product_id}"]'):
+            return False, ""
+        percent = response.css("[data-flexible-discount-percent]::attr(data-flexible-discount-percent)").get()
+        return (True, percent) if percent else (False, "")
 
     def variant_prices(self, response):
         # Each picker option carries its variant's price. Other products' pickers on the page
