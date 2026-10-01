@@ -22,12 +22,13 @@ Row counts are from the runs on 2026-10-01; the catalogue changes over time.
 From the repo root (Python 3.12.10):
 
 ```sh
-python -m venv .venv
-source .venv/Scripts/activate        # Git Bash on Windows; .venv\Scripts\activate in PowerShell
+
 pip install -r requirements.txt
 
-cd glossier/task4
+cd task...
 scrapy runspider glossier_spider.py -O output/task4-us.csv
+#Or in task 4 you can do
+bash run-spider.sh
 ```
 
 Run each spider from inside its task folder. `-O` overwrites the file. Every run is a full snapshot.
