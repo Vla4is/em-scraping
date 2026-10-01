@@ -30,3 +30,11 @@ i will scrape https://www.glossier.com/en-lt/products/glossier-you-doux and i ch
 22. I likely did wrong stragies, and now inspecting the produce, they have lots of different colors and different sizes combinations, etc.
 23. I jumped a little bit further but its useful for later tasks, i just identified a part in the code that has the category placed and did addition of that 
 24. Fixing the readme, with AI completely.
+25. looks like task 3 is really small change of 1-2 lines of code compared to task 2
+26. Done, I want to test the data at this stage, requested claude to create a quick profiling tool for it to see if all the urls and names unique, and i dont have outliers.
+27. I have noticed that there is a difference between the amount of items scraped in task 1 between tasks 2 and 3. Investigating , maybe one item was removed during this timeline.
+28. The difference is explainable (AI AGENT checked) and this is because cloud paint, while in the first task i extract the variants in the link while i modified the later script to disregard and focus solely on the product without variations.
+29. I decided to remove the scraping of multiple pages in task 1, so it will iterally will follow the instructions. Anyway it never made sense to me to scrape one page in retail project.
+30. Forgot to mention i do ad-hoc testing thorught the data collection on the website and compared the data im getting all intact.
+31. Spotted issue with product 8255693258997 in task 3 , the description is wrong. So better to imporve task 3 script. I inspected the element on the home page and gave claude instruction what to code. basicaly: #description-item, it would be great to reconcile the categories , but i will keep it as it is right now.
+32. The issue with the product description resolvved after directly grabbing it from the main page.

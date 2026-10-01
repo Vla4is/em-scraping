@@ -4,8 +4,8 @@ Cards on the collection page link to a variant (?variant=...), so one product ca
 have several cards (e.g. Cloud Paint Blush / Bronzer). The link is cut at "?" to get
 the product page; Scrapy requests each URL once, so every product is visited once.
 The category is not shown on the page; it comes from the product data the page embeds
-(SDG.Data.productJson -> "type"), and so does the description ("description", HTML
-reduced to plain text). Sets mostly have an empty description there.
+(SDG.Data.productJson -> "type"). The description is the visible paragraph
+<p id="description-item">, which sets have too.
 
 Set the collection URL in start_urls, then run from this folder:
     scrapy runspider glossier_spider.py -O output/name_of_the_output.csv
@@ -22,6 +22,8 @@ class GlossierSpider(scrapy.Spider):
     custom_settings = {
         "ROBOTSTXT_OBEY": True,
         "DOWNLOAD_DELAY": 1,
+        "SCHEDULER_MEMORY_QUEUE": "scrapy.squeues.FifoMemoryQueue",   # first in, first out
+        "CONCURRENT_REQUESTS": 1,                                      # one request at a time
         # Replaces Scrapy's defaults to drop Accept-Language: with it the site
         # geo-redirects by IP (e.g. to /en-lt/) instead of serving the URL we ask for.
         "DEFAULT_REQUEST_HEADERS": {
@@ -55,8 +57,8 @@ class GlossierSpider(scrapy.Spider):
             "product_name": product.get("title", ""),
             "url": response.url,
             "category": product.get("type", ""),
-            # The description is HTML; keep only its text, with whitespace collapsed.
-            "description": " ".join(" ".join(scrapy.Selector(text=product.get("description") or "<p></p>").xpath("//text()").getall()).split()),
+            # The visible description paragraph; its text only, with whitespace collapsed.
+            "description": " ".join(" ".join(response.css("#description-item ::text").getall()).split()),
             "scraped_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         }
 

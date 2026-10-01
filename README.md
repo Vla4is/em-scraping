@@ -26,10 +26,11 @@ Only one line should be active at a time — the other must stay commented out.
 ## Running a task
 
 Activate the venv first, then run from inside that task's folder. Each spider
-follows pagination and writes straight to `output/`, overwriting any existing
-file of the same name (`-O`, capital letter).
+writes straight to `output/`, overwriting any existing file of the same name
+(`-O`, capital letter). Tasks 2 and 3 follow pagination; Task 1 stops after the
+first page.
 
-### Task 1 — product cards from the collection page
+### Task 1 — product cards from the first page of the collection
 
 ```sh
 cd glossier/task1
@@ -59,9 +60,8 @@ cd glossier/task3
 scrapy runspider glossier_spider.py -O output/task3-lt.csv
 ```
 
-Same as Task 2, plus a `description` column. Build-your-own sets and most
-fixed sets have no description in the source data, so that field is empty
-for them — see `notes.txt`.
+Same as Task 2, plus a `description` column: the text of the description
+paragraph shown on the product page (`<p id="description-item">`).
 
 ## Notes
 
