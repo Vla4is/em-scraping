@@ -1,10 +1,11 @@
-"""Glossier scraper - Task 2: every unique product in the collection, with its category.
+"""Glossier scraper - Task 3: every unique product in the collection, with its category and description.
 
 Cards on the collection page link to a variant (?variant=...), so one product can
 have several cards (e.g. Cloud Paint Blush / Bronzer). The link is cut at "?" to get
 the product page; Scrapy requests each URL once, so every product is visited once.
 The category is not shown on the page; it comes from the product data the page embeds
-(SDG.Data.productJson -> "type").
+(SDG.Data.productJson -> "type"), and so does the description ("description", HTML
+reduced to plain text). Sets mostly have an empty description there.
 
 Set the collection URL in start_urls, then run from this folder:
     scrapy runspider glossier_spider.py -O output/name_of_the_output.csv
@@ -27,15 +28,14 @@ class GlossierSpider(scrapy.Spider):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
         "FEED_EXPORT_ENCODING": "utf-8",
-        "FEED_EXPORT_FIELDS": ["product_id", "product_name", "url", "category", "scraped_at"],
+        "FEED_EXPORT_FIELDS": ["product_id", "product_name", "url", "category", "description", "scraped_at"],
     }
 
     def parse(self, response):
         cards = response.css("article.js-product-item")
         self.logger.info("%s: %d cards", response.url, len(cards))
-
+        #grabbing the url of the product
         for card in cards:
-            #grabbing the url of the product
             href = card.css(".pi__title a::attr(href)").get()
             if href:
                 yield response.follow(href.split("?")[0], callback=self.parse_product)
@@ -55,6 +55,8 @@ class GlossierSpider(scrapy.Spider):
             "product_name": product.get("title", ""),
             "url": response.url,
             "category": product.get("type", ""),
+            # The description is HTML; keep only its text, with whitespace collapsed.
+            "description": " ".join(" ".join(scrapy.Selector(text=product.get("description") or "<p></p>").xpath("//text()").getall()).split()),
             "scraped_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         }
 

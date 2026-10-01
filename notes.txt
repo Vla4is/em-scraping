@@ -28,3 +28,5 @@ get all the products, then scrape from inside
 i will scrape https://www.glossier.com/en-lt/products/glossier-you-doux and i checked all the options are there in lithuania and the united states. 
 21. I will use it for reconciliation, i will scrape the navbar instead and retrieve all the categories, because category name has strong business value so the order for task 2 will be navbar->category->subcategory->product this way it will be the most useful for bi intelligence. I will reconcile with previous idea. Also i will have product duplicates like SCD 2.
 22. I likely did wrong stragies, and now inspecting the produce, they have lots of different colors and different sizes combinations, etc.
+23. I jumped a little bit further but its useful for later tasks, i just identified a part in the code that has the category placed and did addition of that 
+24. Fixing the readme, with AI completely.

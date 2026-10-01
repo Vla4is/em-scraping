@@ -19,7 +19,7 @@ class GlossierSpider(scrapy.Spider):
     name = "glossier"
     #please uncomment the country you need. I kept it simple.
     #LIT version
-    start_urls = ["https://www.glossier.com/en-lt/collections/all"]
+    # start_urls = ["https://www.glossier.com/en-lt/collections/all"]
     #US version
     start_urls = ["https://www.glossier.com/collections/all"]
 
