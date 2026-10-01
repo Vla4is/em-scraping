@@ -1,10 +1,11 @@
-"""Glossier scraper - Task 2: every unique product in the collection, with its category.
+"""Glossier scraper - Task 3: every unique product in the collection, with its category and description.
 
 Cards on the collection page link to a variant (?variant=...), so one product can
 have several cards (e.g. Cloud Paint Blush / Bronzer). The link is cut at "?" to get
 the product page; Scrapy requests each URL once, so every product is visited once.
 The category is not shown on the page; it comes from the product data the page embeds
-(SDG.Data.productJson -> "type").
+(SDG.Data.productJson -> "type"). The description is the visible paragraph
+<p id="description-item">, which sets have too.
 
 Set the collection URL in start_urls, then run from this folder:
     scrapy runspider glossier_spider.py -O output/name_of_the_output.csv
@@ -29,6 +30,8 @@ class GlossierSpider(scrapy.Spider):
     custom_settings = {
         "ROBOTSTXT_OBEY": True,
         "DOWNLOAD_DELAY": 1,
+        "SCHEDULER_MEMORY_QUEUE": "scrapy.squeues.FifoMemoryQueue",   # first in, first out
+        "CONCURRENT_REQUESTS": 1,                                      # one request at a time
         # Replaces Scrapy's defaults to drop Accept-Language: with it the site
         # geo-redirects by IP (e.g. to /en-lt/) instead of serving the URL we ask for.
         "DEFAULT_REQUEST_HEADERS": {
@@ -36,15 +39,14 @@ class GlossierSpider(scrapy.Spider):
         },
         "FEED_EXPORT_ENCODING": "utf-8",
         "FEED_EXPORTERS": {"csv": QuotedCsvExporter},
-        "FEED_EXPORT_FIELDS": ["product_id", "product_name", "url", "category", "scraped_at"],
+        "FEED_EXPORT_FIELDS": ["product_id", "product_name", "url", "category", "description", "scraped_at"],
     }
 
     def parse(self, response):
         cards = response.css("article.js-product-item")
         self.logger.info("%s: %d cards", response.url, len(cards))
-
+        #grabbing the url of the product
         for card in cards:
-            #grabbing the url of the product
             href = card.css(".pi__title a::attr(href)").get()
             if href:
                 yield response.follow(href.split("?")[0], callback=self.parse_product)
@@ -64,6 +66,8 @@ class GlossierSpider(scrapy.Spider):
             "product_name": product.get("title", ""),
             "url": response.url,
             "category": product.get("type", ""),
+            # The visible description paragraph; its text only, with whitespace collapsed.
+            "description": " ".join(" ".join(response.css("#description-item ::text").getall()).split()),
             "scraped_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         }
 

@@ -1,0 +1,73 @@
+TOOLS
+- Python 3.12, Scrapy 2.19 (crawling, pagination, robots.txt, CSV export)
+- curl + Git Bash: fetching single pages into glossier/raw/ for inspection (removed from git, reportducible by running fetch-all-prod.sh)
+- Jupyter notebooks: profiling the outputs (uniqueness, empty values, set references, image outliers)
+- VS Code, Claude Code (AI, see AI USAGE)
+
+ASSUMPTIONS
+-I know about /products.json but do not rely on it in sake of scraping.
+-Location upon checking with VPN /en-lt/ is Lithuania and the plain URL is the US, 
+-Gifts are free so not scraped.
+-Some variants discountinued but still listed but marked out of stock in the data set.
+-Variant ID is unique (it was profiled and there are no observed contraditions check glossier\task4\profile.ipynb)
+-The price displayed on the page is correct.
+-The category is Shopify's product type from the page data, not the navbar. Internal names stay as they are, eg "Merch".
+-Scraping using full-reload.
+Task 1: Scraping the first page including all of the images 19 items
+Task 2 and 3: Extract all products within the category - meaning all the pages on the link , but i also extracted a category from the products
+Additionally cleaned the links so there will be no product variant, to extract the variant cleanly in the future.
+Task 4: One row per variant, one image per product, other images on the website are including models might be messy and useless for BI analysis.
+No price in "Build-your-own sets" 4 products in total, due to js rendering, but we have the discount amount that allows us
+to calculate the price of the set, with rounding error, due to unclear rounding rules. The sets are holding the refference 
+(multi-dimensional array) to the products included with the variant id's. Variant id is UNIQUE.
+In "Build-your-own sets" there are no images for them, on the website they just reuse the old ones, but the images can be retrieved from the products in the catralog through the PK
+which is the variant id that are stored in the array. Other sets are holding an image because they have a specific one on the website.
+Structure of the website is the same in Lithuania and in the United States.
+
+DECISIONS AND TRADEOFFS
+- Scrapy, no browser (Selenium/Playwright): the site is server-rendered, curl returns the products.
+  Tradeoff: the 4 "Build-your-own sets" have no price and no image, because JavaScript builds them.
+  A browser for 4 rows was not worth the complexity.
+- HTML scraping instead of /products.json: the task is about scraping. Tradeoff: more selectors to
+  maintain, and a change in the page layout can break them.
+- Data sources: product data embedded in the page (SDG.Data.productJson: IDs, category, variants, stock),
+  #description-item for the description, the variant picker for prices. Rejected the page metadata
+  (microdata / ld+json) and the tracking "var item": unreliable (wrong currency, default variant only).
+- One self-contained folder and spider per task: easy to review and run task by task.
+  Tradeoff: some code is duplicated on purpose.
+- Sets: one row per set, set_variant_ids holds the variant IDs per slot. Build-your-own sets keep the
+  discount % instead of a calculated price. Tradeoff: BI has to calculate the price, with small rounding
+  differences, but no information is lost. The "Save N%" badge is not used: it is rounded.
+- Price split into price (regular) and discounted_price (only when on sale), kept as text with the
+  currency symbol, as shown on the site.
+- All CSV values are quoted strings, so IDs are not changed by Excel (e.g. 8.94E+12) and types are not guessed.
+- Politeness: robots.txt obeyed, 1 second delay, one request at a time, in order (rows keep the site's order).
+  Tradeoff: a run takes about 2 minutes instead of seconds.
+- Country chosen by commenting a URL line instead of a setting or proxy: simple and explicit.
+  Tradeoff: switching countries is a manual step.
+
+KNOWN LIMITATIONS
+- US price format is mixed: $116.00 (variant picker) vs $116 (button).
+- Empty descriptions: Ultralip Duo (no description element), Digital Gift Card (US only).
+- 4 empty images: the build-your-own sets (see above). Images are one photo per product, not per shade/variant.
+- Category is Shopify's product type: internal names (Merch = "Glossier Goods"), sets take their contents' type.
+- The ToS prohibits bots; robots.txt allows product and collection pages. Low volume, training purpose.
+
+AI USAGE (Claude Code)
+- I have used AI as a tool and as an asistant to understand the topics, but its a tool and in the end to deliver quality job it
+has to be utilized as a tool. So every step I have done is with thought and undersatnding behind. I am usually starting
+ "from something" and them improving it, until the solution is clean understandable and I can take responsibility for it.
+- AI did: investigation checks (partially me partially claude, curl/grep, comparing locales, finding pagination), the spider code 
+for each task, offline tests on saved pages, the profiling notebooks, README, CLAUDE.md and partially helped me to structurize the notes.
+- I did: the approach and design (Scrapy, no products.json, task structure, variant-level rows, the set model with
+  variant IDs + discount percent), key findings (#description-item, the image classes, the hreflang/locale header,
+  set prices in the collection page data, the data-variant-id clue that led to the single set selector, the
+  gallery hierarchy for the image selector), the decision to skip build-your-own set images, and ad-hoc
+  validation against the live site.
+- Pattern that worked: I find the selector or data source on the page, AI writes the code and tests it offline
+  on saved pages, AI profiles the output, I check samples on the live site.
+- Manual edits and why: start URLs written directly instead of a country variable (explicit is clearer); comments
+  in my own words; pagination removed from Task 1 to follow the brief literally; ordering settings added to Task 3;
+  AI suggested due to knowledge of shopify structure I rejected ?country= (the page fights it) and a three-selector set solution (too complex and useless).
+-I created a file notes-on-the-way.txt that are describind in not a structured way the steps that i did, mistakes thoughts, claude refined it
+and helped me to create this notes.txt.

@@ -1,7 +1,7 @@
-"""Glossier collection scraper - Task 1: every product card on the collection page.
+"""Glossier collection scraper - Task 1: the product cards on the first page of the collection.
 
-The page loads more cards as you scroll; those come from ?page=2, 3, ... so the
-spider follows the rel="next" link until there is none.
+Only the first page is scraped. The cards that load as you scroll come from
+?page=2, 3, ... and are collected in Task 2.
 
 Set the collection URL in start_urls, then run from this folder:
     scrapy runspider glossier_spider.py -O output/task1-lt.csv
@@ -10,9 +10,17 @@ Set the collection URL in start_urls, then run from this folder:
     the command to run it:
     scrapy runspider glossier_spider.py -O output/task1-lt.csv 
 """
+import csv
 import json
 from datetime import datetime, timezone
 import scrapy
+from scrapy.exporters import CsvItemExporter
+
+
+class QuotedCsvExporter(CsvItemExporter):
+    # Every CSV value in quotes, so all columns read as text (IDs stay as typed, no 8.94E+12 in Excel).
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, quoting=csv.QUOTE_ALL, **kwargs)
 
 
 class GlossierSpider(scrapy.Spider):
@@ -21,7 +29,7 @@ class GlossierSpider(scrapy.Spider):
     #LIT version
     start_urls = ["https://www.glossier.com/en-lt/collections/all"]
     #US version
-    start_urls = ["https://www.glossier.com/collections/all"]
+    # start_urls = ["https://www.glossier.com/collections/all"]
 
     custom_settings = {
         "ROBOTSTXT_OBEY": True,
@@ -32,6 +40,7 @@ class GlossierSpider(scrapy.Spider):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
         "FEED_EXPORT_ENCODING": "utf-8",
+        "FEED_EXPORTERS": {"csv": QuotedCsvExporter},
         "FEED_EXPORT_FIELDS": [
             "product_name", "product_id", "image", "url",
             "price", "regular_price", "scraped_at",
@@ -58,11 +67,6 @@ class GlossierSpider(scrapy.Spider):
                 "regular_price": self.clean(" ".join(price_block.css(".pi__price--compare-at s::text").getall())),
                 "scraped_at": scraped_at,
             }
-
-        # Stop on the last page (no rel="next"), or on an empty page as a safety net.
-        next_page = response.css('[rel="next"]::attr(href)').get()
-        if cards and next_page:
-            yield response.follow(next_page, callback=self.parse)
 
     def card_images(self, card, response):
         urls = []

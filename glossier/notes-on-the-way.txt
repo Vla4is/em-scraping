@@ -1,0 +1,66 @@
+first task
+1. TOS prohibit bot usage (1.Use of the Site.p3), we discussed it in the interview, its not respected - anti competetive behaviour legal grey area.
+2. Its a shopify site making it simplier, loaded the site and saw widget_settings (https://static.rechargecdn.com/store/glossier-admin.myshopify.com/2020-12/widget_settings.json) and store settings (https://static.rechargecdn.com/store/glossier-admin.myshopify.com/2020-12/store_settings.json) indicated its shopify
+also, noted that all the products should live in https://www.glossier.com/collections/all/products.json but i will disredard it for the first step
+and essentially scrape in sake of training.
+3. after just running curl the site returned first page of the products, server rendered website so no selenium for the first task, choosing scrapy due to familiarity in some sort.
+4. One more thing i noticed is fragnanace duo, and mixes between the products, we have to create a special script to get those so our catalog will be precise,
+the script should be created the way in case there will be addition or removal of products in those sets will withstand it.
+5. I assume UPSERT in the data warehouse or full loading.
+6. They give away free stuff -> eg beauty bag . MUST be documented.
+7. I will strengthen 4 - > https://www.glossier.com/en-lt/products/in-a-new-york-minute example that there is a need to address the products in a clever way. And document all the colors etc.
+8. The website is using incremental loading (basically renders pages dynamically, but it doesnt update the url), curl is not the solution of retrieval of all the products, AI agent flagged 6 pages before. And indeed there is a link to the next page:\
+example -> <link rel="next" href="/en-lt/collections/all?page=2"> so we need to automate the scraper.
+9. So the website is following similar structure in us and lithuania (EU) , and i land on a stragery ->
+the link consists: url/localoization/products/PRODUCT ITSELF?variant=number
+get all the products, then scrape from inside
+10. I have investigates with claude about selectors we gonna be using, and claude flagged that metagata is not reliable, i agreed and decided to use another part that is useful to retrieve is under .variant-card div.
+11. After havcing a solid undersatnding of the structure and closing the fundamental gaps i am asking cluade to code the spider, and see the result with expectation that the code will fail to capture the nuances.
+12. After the attempt the result was as expected, failed, code works but scraped one page.
+13. I know that I can adjust the url in order to access from specific location, so I will do, becuase I dont have proxy and in case it is possible in the website i will do. I usually do NOT make the links visible like that in my projects, i rather rather use same links for every country.
+14. Claude used ?country placeholder because he knew the architecture of shopify websites, I tested it, and the page is fighting this parameter and curl is pretty much woking well with the /en-LT/ for exampe subfolder, and just does redirect, but the scraper collects the data we need in this case.
+15. my theory works i tested couple of items and pulled the german version, and indeed the prices in lithuania are different form germany and tend to be higher. So I profiled US LT and DE and ensured similarities in the site structure but data differneces
+16. addirtionaly i saw really good and handy header with all the links on top so we will be able to scrape every country. 
+17. on the last page there is no rel="next" so we are able to follow the pages like that.
+18. I programmed the scraper with claude, the code structure is not great and doesn't follow my style, I edited the code slightly so it will be clearer. 
+19. Re ran, code is clean. Resutlts went through AD-HOC testing looking great.
+20. started task 2, i will be assuming that all of the categories and products withing category will be present (without the specific colors etc) are there and then i will design the crawler to get into every unique url and entirely scrape, for example if i have https://www.glossier.com/en-lt/products/glossier-you-doux?variant=46964207026421
+i will scrape https://www.glossier.com/en-lt/products/glossier-you-doux and i checked all the options are there in lithuania and the united states. 
+21. I will use it for reconciliation, i will scrape the navbar instead and retrieve all the categories, because category name has strong business value so the order for task 2 will be navbar->category->subcategory->product this way it will be the most useful for bi intelligence. I will reconcile with previous idea. Also i will have product duplicates like SCD 2.
+22. I likely did wrong stragies, and now inspecting the produce, they have lots of different colors and different sizes combinations, etc.
+23. I jumped a little bit further but its useful for later tasks, i just identified a part in the code that has the category placed and did addition of that 
+24. Fixing the readme, with AI completely.
+25. looks like task 3 is really small change of 1-2 lines of code compared to task 2
+26. Done, I want to test the data at this stage, requested claude to create a quick profiling tool for it to see if all the urls and names unique, and i dont have outliers.
+27. I have noticed that there is a difference between the amount of items scraped in task 1 between tasks 2 and 3. Investigating , maybe one item was removed during this timeline.
+28. The difference is explainable (AI AGENT checked) and this is because cloud paint, while in the first task i extract the variants in the link while i modified the later script to disregard and focus solely on the product without variations.
+29. I decided to remove the scraping of multiple pages in task 1, so it will iterally will follow the instructions. Anyway it never made sense to me to scrape one page in retail project.
+30. Forgot to mention i do ad-hoc testing thorught the data collection on the website and compared the data im getting all intact.
+31. Spotted issue with product 8255693258997 in task 3 , the description is wrong. So better to imporve task 3 script. I inspected the element on the home page and gave claude instruction what to code. basicaly: #description-item, it would be great to reconcile the categories , but i will keep it as it is right now.
+32. The issue with the product description resolvved after directly grabbing it from the main page.
+33. I already understand the essense of the task 4, and there are multiple scenatios that i need to take into account, i will do that manually to capture the edge cases with the sets, but i will make an assumption, because i didnt observe behaviour of change of price i will assume set will NOT change the price in any way.
+34. I have designed a scraper that scrapes the products but doesnt track sets for now , i just wanted to start with something, now im modifying it . The script was rewritten with AI , selectors and the sources of data stricktly defined by me. And output also.
+35. thinking to implement sets -> storing the item ids that are in the set looks to be the best strategy, assuming sets price is always the same because on the main page its a fixed price.
+36. i have an issue with sets not grabbing the price out of their page , while i was inversigating i found var item , and its unreliable. because for cloud paint (cloud-paint?variant=46178049949941) which is discounted now only in form of the bronzer its impossible to know whether its bronzer or blush so, the decision is not to use this variable at all.
+37. so for sets, there can be multiple solutions made, but my assumption is wrong about grab the price once and keep it as it is. Because it dymanically recalculates the price, so i will be doing the next thing -> is to grab the item ids in the set and the discount percentage, this way we will be able to avoid loosing accuracy and not loosing any information.
+38. For that i will have to create a surrogate id for the products, because for sets we will refference by surrogate id , because we need product+version id, so instead of that we will refference by surrogate id.
+39. Because the website is shopify we can use variant id as primary key,  they are unique there, i will check them for uniqueness anyway, telling claude to create me a notebook to run it.
+40. Claude created a profiling notebook indicated that we can use the product version as PK, code looks reasonable.
+41. I investigates static sets where we arent re-rendering the price, so there we can just grab the item ids, because curl reuturns the page. 
+42. I calculated it and its dynamically rendered so i wont be able to grab it using recalculation, because the numbers that show "save 12% with this set" are misleading and the calcualation doesnt match the reliaty e.g Ultralip Duo original price 58.95 eur with sale 51.95 and if we do 58.95*0.88 is 51.876 so its not exactly 12%.
+I didnt observe any set that the price is different from what is stated on the main page, so price will be from the main page. But the variant ids will be stored.
+43. The price is rendered everywhere dynamically so i have no access to it, but i still can store the discount amount. So its fine, the price will be different in couple of cents in the bi solution, also the rounding is not clear there. I didnt spot it imidiately so otherwise i would use selenium or playwright.
+44. So i have created a detector for the flexible sets , there are not very common there are only 4. and the reading confrimed that it reads the percentage correctly. These are only 4 outliers the rest is working fine, now I am figuring out from where i need to retrieve the product values, observing and using claude.
+45. Upon inspection i saw that some of the items are marked as flexible set even if they arent, so i will find another selector i believe the issue is in response.css("[data-set-items-json]")
+46. Fixed the selector, found more concrete one. Claude fixed the code. And updated its claude md
+47. I am checking all the sets for structure, takes time. I pulled all the sets and asked claude to look if he will find something strong, otherwise i will be looking for it.
+48. Claude gave an idea "to use 3 differnet selectors for products -> i dont like the idea, i found and then i pushed giving him strong clue -> there was data-variant-id value inside multiple html tags , so almost for sure i would be able to get a clear hierarchy out of ALL the sets with one slector and it was found by claude after
+i provided the clue  and claude spoted it quickly -> .pv-set-configurable .product-set__list > li
+49. Omg, it worked. I asked claude to profile it, i did ad hoc testing on couple of real data units and all the product variants are PERFECTLY matching.
+50. I did ad-hoc testing looking at the in stock variable all looks great and it is likely catching every one of them.
+51. i created an sh file so it will be easier to re-run the spider through bash.
+52. There is an issue with Milky Jelly Cleanser variants 300 mL and 15 ml and After Baume 125 ml are out of stock, my selector scraped it, upon checking they are just no longer produced by glossair, i do not reiterate and change selector for that.
+53. I consder the task as done, and preparing it for submission.
+54. One thing i forgot are the images. I will sort it.
+55. I identified a selector, and instructed claude to add it to the code. (ME selector -> code AI agent)
+56. 4 image outliers as expected, after profiling it,it doesnt matter they are sets and we have the images of all of those products on the partent reocrds.
