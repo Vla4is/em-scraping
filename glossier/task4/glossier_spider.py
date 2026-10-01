@@ -34,7 +34,7 @@ class GlossierSpider(scrapy.Spider):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
         "FEED_EXPORT_ENCODING": "utf-8",
-        "FEED_EXPORT_FIELDS": ["product_id", "product_name", "variant_name", "url", "category", "description", "in_stock", "scraped_at"],
+        "FEED_EXPORT_FIELDS": ["product_id", "variant_id", "product_name", "variant_name", "url", "category", "description", "price", "discounted_price", "in_stock", "scraped_at"],
     }
 
     def parse(self, response):
@@ -53,9 +53,9 @@ class GlossierSpider(scrapy.Spider):
 
     def parse_product(self, response):
         # Only set pages carry the set's contents in data-set-items-json; they need their own handling.
-        if response.css("[data-set-items-json]"):
-            self.logger.info("Skipping set: %s", response.url)
-            return
+        # if response.css("[data-set-items-json]"):
+        #     self.logger.info("Skipping set: %s", response.url)
+        #     return
 
         product = self.product_json(response)
         if not product.get("type"):
@@ -63,19 +63,48 @@ class GlossierSpider(scrapy.Spider):
 
         description = " ".join(" ".join(response.css("#description-item ::text").getall()).split())
         scraped_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        prices = self.variant_prices(response)
+        # Products without a variant picker: the "Add to bag" price (the class without -sticky / -product-add-on).
+        button_price = (self.money(response.css(".js-price-original ::text").getall()),
+                        self.money(response.css(".js-price-compare ::text").getall()))
 
         for variant in product.get("variants", []):
+            current, old = prices.get(str(variant["id"]), button_price)
             yield {
                 "product_id": str(product.get("id", "")),
+                # Unique across the store, so it is the key that set rows refer to.
+                "variant_id": str(variant["id"]),
                 "product_name": product.get("title", ""),
                 # e.g. "XS" or "Black Cherry"; empty (None) for products without options instead of "Default Title".
                 "variant_name": variant.get("public_title") or "",
                 "url": f"{response.url}?variant={variant['id']}",
                 "category": product.get("type", ""),
                 "description": description,
+                # When discounted, the site shows the old price struck through next to the current one.
+                "price": old or current,
+                "discounted_price": current if old else "",
                 "in_stock": variant.get("available"),
                 "scraped_at": scraped_at,
             }
+
+    def variant_prices(self, response):
+        # Each picker option carries its variant's price. Other products' pickers on the page
+        # never share these variant IDs, and repeated pickers repeat the same prices.
+        prices = {}
+        for option in response.css("input.config__radio[data-variant-id][data-variant-price]"):
+            prices.setdefault(option.attrib["data-variant-id"], (
+                self.money([option.attrib["data-variant-price"]]),
+                self.money([option.attrib.get("data-variant-compare-at-price", "")]),
+            ))
+        return prices
+
+    @staticmethod
+    def money(texts):
+        # First non-empty text, e.g. "€85,95 EUR" -> "€85,95"; a zero amount ("€0,00") means no price.
+        text = next((" ".join(t.split()) for t in texts if t.strip()), "")
+        if text[-4:-3] == " " and text[-3:].isalpha():
+            text = text[:-4]
+        return text if any(c in "123456789" for c in text) else ""
 
     @staticmethod
     def product_json(response):

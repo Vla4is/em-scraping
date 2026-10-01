@@ -13,4 +13,12 @@
 #  curl https://www.glossier.com/en-lt/products/care-package?variant=46437774426357 -o raw/care_package_out_of_stock.html
 #  curl https://www.glossier.com/en-lt/products/glossier-you-soie?variant=47501395853557 -o raw/perfume_some.html
 
- curl https://www.glossier.com/en-lt/products/balm-dotcom?parent_collection=balms -o raw/the_balm.html
+#  curl https://www.glossier.com/en-lt/products/balm-dotcom?parent_collection=balms -o raw/the_balm.html
+
+#  curl https://www.glossier.com/en-lt/products/hand-cream -o raw/out-of-stock-hand-cream.html
+
+#  curl https://www.glossier.com/en-lt/products/the-skincare-icons-eu?variant=48273762582773 -o raw/the-skincare-icons-eu.html
+
+#  curl https://www.glossier.com/en-lt/products/cloud-paint?variant=46178049523957 -o raw/Cloud-Paint-Blush.html
+#  curl https://www.glossier.com/en-lt/products/cloud-paint?variant=46178049949941 -o raw/Cloud-Paint-Bronzer.html
+curl https://www.glossier.com/en-lt/products/fragrance-duo -o raw/fragrance-duo.html
