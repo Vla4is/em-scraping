@@ -1,0 +1,22 @@
+1. so claudflare blocks me, as a bot lets see if i can retrieve the session token. No
+2. So i looked and decided playwright -> download the page offline and then scrape it. and keep the timestamp in the file name.
+3. Playwright is cool
+4. claude is pushing back always but i think thats a good plan.
+5. Claude cooked the page now testing. looks like it works. But the code i pulled is a mess i asked claude create a readable page with html so i can inspect it
+6. Because i want the code re runable -> i download the html and on every re-run the html file is archived into a folder. It was implemented in the playwright code.
+7. note that timestamp is UTC, so different a bit.
+8. I made the parser also move the result to old page.
+9. I am making sure the versions present in requiremnts, because they can break.
+10. task 1 done.
+11. tested task 1 issue , with the price, loosing previous price before discount important!
+12. fixed
+13. Going to task 2 copy paste addition of page scrolling.
+14. The site is much less complex than glossier there is nothing to discuss. Easy scraping. Just bypassing the regional protection and its in australia - far away.
+15. This time i really know what im doing step by step. Making flow of claude easier
+16. I wanted to look if there are onclick triggers, but claude pushed back, and told that WE already loaded EVERYTHING from json in the task 2 so, small modification to parsing and we are good. The site is very freindly for scraping.
+17. When i argued hard with claude and went my way - paid of big time. This approach, just broke the data in pieces allowing me work and in one task 1 the job was finished. But im still alert, and verry happy i got through it, and bypassed cloudflare.
+18. small bug in the csv.
+19. issue -> the frontend html is hard to scrape , but i have json, checking if possible for the last task to do ALL JSON.
+20. indeed i can do json, but here i would ask seniors... json vs html... hm 
+21. All the code is claude, this time very little intervesion but code reviews were done, mostly getting i complain about writing messy, but he got my tempo and habits. He found the json, switched completley collect json, except the link. the links from html data intact will be reconciled with task3 that is fetching from html.
+22. There were couple of undocumented changes here.
